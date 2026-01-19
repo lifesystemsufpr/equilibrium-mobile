@@ -18,27 +18,30 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.ufpr.equilibrium.R
 import com.ufpr.equilibrium.feature_login.LoginActivity
-import com.ufpr.equilibrium.network.PessoasAPI
 import com.ufpr.equilibrium.utils.ErrorMessages
 import com.ufpr.equilibrium.utils.BrazilianState
 import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 import com.ufpr.equilibrium.utils.SessionManager
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Locale
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import android.widget.ArrayAdapter
+import com.ufpr.equilibrium.domain.repository.PatientRepository
+import com.ufpr.equilibrium.domain.model.Patient
+import com.ufpr.equilibrium.domain.model.Address
+import com.ufpr.equilibrium.core.common.Result
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 
 @AndroidEntryPoint
 class EnderecoFragment : Fragment() {
 
-    @Inject lateinit var pessoasAPI: PessoasAPI
+    @Inject lateinit var patientRepository: PatientRepository
 
     private lateinit var cep: EditText
     private lateinit var numero: EditText
@@ -266,38 +269,42 @@ class EnderecoFragment : Fragment() {
             val birthdayOnly = date?.let { sdfOutput.format(it) } ?: ""
             
             val zipDigitsOnly = viewModel.cep.value.toString().replace(Regex("[^\\d]"), "")
+            val cpfDigitsOnly = viewModel.cpf.value.toString().replace(Regex("[.-]"), "")
+            val gender = if (viewModel.sexo.value.toString() == "Masculino") "MALE" else "FEMALE"
 
-            val user = User(
+            // Create Patient domain model
+            val patient = Patient(
+                id = UUID.randomUUID(), // Temporary, will be assigned by backend
+                cpf = cpfDigitsOnly,
                 fullName = viewModel.nome.value.toString(),
-                cpf = viewModel.cpf.value.toString().replace(Regex("[.-]"), ""),
-                gender = if (viewModel.sexo.value.toString() == "Masculino") "MALE" else "FEMALE"
-            )
-
-            val paciente = PacienteModel(
-                birthday = birthdayOnly,
-                weight = viewModel.peso.value.toString().toInt(),
+                phone = "", // Not collected in this form
+                birthDate = birthdayOnly,
+                gender = gender,
+                age = 0, // Will be calculated by backend
+                education = viewModel.escolaridade.value.toString(),
+                socioeconomicLevel = viewModel.nivelSocio.value.toString(),
+                weight = viewModel.peso.value.toString().toIntOrNull(),
                 height = viewModel.altura.value,
-                zipCode = zipDigitsOnly,
-                street = viewModel.rua.value.toString(),
-                number = viewModel.numero.value.toString(),
-                complement = viewModel.complemento.value.toString(),
-                neighborhood = viewModel.bairro.value.toString(),
-                city = viewModel.cidade.value.toString(),
-                state = viewModel.uf.value.toString(),
-                socio_economic_level = viewModel.nivelSocio.value.toString(),
-                scholarship = viewModel.escolaridade.value.toString(),
-                user = user
+                hasFallHistory = false,
+                address = Address(
+                    zipCode = zipDigitsOnly,
+                    street = viewModel.rua.value.toString(),
+                    number = viewModel.numero.value.toString().toIntOrNull() ?: 0,
+                    complement = viewModel.complemento.value.toString(),
+                    neighborhood = viewModel.bairro.value.toString(),
+                    city = viewModel.cidade.value.toString(),
+                    state = viewModel.uf.value.toString(),
+                    stateCode = viewModel.uf.value.toString()
+                )
             )
-
-            println(paciente)
 
             loadingOverlay.visibility = View.VISIBLE
 
-            pessoasAPI.postPatient(paciente).enqueue(object : Callback<PacienteModel> {
-                override fun onResponse(call: Call<PacienteModel>, response: Response<PacienteModel>) {
-                    loadingOverlay.visibility = View.GONE
-
-                    if (response.isSuccessful) {
+            // Use coroutines to call repository
+            lifecycleScope.launch {
+                when (val result = patientRepository.createPatient(patient)) {
+                    is Result.Success -> {
+                        loadingOverlay.visibility = View.GONE
                         AlertDialog.Builder(requireContext())
                             .setTitle("Cadastro concluído")
                             .setMessage("O paciente foi cadastrado com sucesso!")
@@ -315,23 +322,28 @@ class EnderecoFragment : Fragment() {
                                 requireActivity().finish()
                             }
                             .show()
-                    } else {
-                        val message = ErrorMessages.forHttpStatus(requireContext(), response.code())
+                    }
+                    is Result.Error -> {
+                        loadingOverlay.visibility = View.GONE
+                        val errorMessage = result.cause.message ?: "Erro desconhecido"
+                        Log.e("EnderecoFragment", "Error creating patient", result.cause)
+                        
+                        val message = if (errorMessage.contains("409") || errorMessage.contains("conflict")) {
+                            "Já existe um paciente cadastrado com este CPF"
+                        } else if (errorMessage.contains("400")) {
+                            "Dados inválidos. Por favor, verifique todos os campos."
+                        } else {
+                            "Erro ao cadastrar paciente. Tente novamente."
+                        }
+                        
                         AlertDialog.Builder(requireContext())
                             .setTitle("Erro")
                             .setMessage(message)
                             .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
                             .show()
-                        Log.e("postPatient", response.errorBody()?.string().orEmpty())
                     }
                 }
-
-                override fun onFailure(call: Call<PacienteModel>, t: Throwable) {
-                    loadingOverlay.visibility = View.GONE
-                    Toast.makeText(requireContext(), getString(R.string.error_network), Toast.LENGTH_SHORT).show()
-                    Log.e("postPatient", "Network error", t)
-                }
-            })
+            }
         } catch (e: Exception) {
             loadingOverlay.visibility = View.GONE
             Log.e("EnderecoFragment", "Error submitting patient data", e)

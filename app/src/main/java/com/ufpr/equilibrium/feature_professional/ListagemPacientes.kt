@@ -91,8 +91,9 @@ class ListagemPacientes : AppCompatActivity() {
             context = this, 
             pacientes = pacientes,
             onPatientSelected = { patient ->
-                // Salva o ID do paciente no PacienteManager quando ele é selecionado
+                // Salva o ID e nome do paciente no PacienteManager quando ele é selecionado
                 com.ufpr.equilibrium.utils.PacienteManager.uuid = patient.id
+                com.ufpr.equilibrium.utils.PacienteManager.nome = patient.fullName
                 android.util.Log.d("ListagemPacientes", "Paciente selecionado: ${patient.fullName}, ID: ${patient.id}")
             }
         )
@@ -183,7 +184,7 @@ class ListagemPacientes : AppCompatActivity() {
         searchCall?.cancel()
         isSearching = true
         
-        searchCall = pessoasAPI.getPacientes(cpf = cpf, page = 1, pageSize = 1)
+        searchCall = pessoasAPI.getParticipants(cpf = cpf, page = 1, pageSize = 1)
         
         searchCall?.enqueue(object : Callback<PacientesEnvelope> {
             override fun onResponse(
@@ -230,7 +231,7 @@ class ListagemPacientes : AppCompatActivity() {
         
         isLoading = true
         
-        val call = pessoasAPI.getPacientes(page = page, pageSize = pageSize)
+        val call = pessoasAPI.getParticipants(page = page, pageSize = pageSize)
 
         call.enqueue(object : Callback<PacientesEnvelope> {
             override fun onResponse(

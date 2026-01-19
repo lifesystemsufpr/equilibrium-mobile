@@ -17,6 +17,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.ufpr.equilibrium.R
 import com.ufpr.equilibrium.feature_professional.HomeProfissional
 import com.ufpr.equilibrium.feature_professional.ListagemPacientes
@@ -30,6 +31,8 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Response
+import java.io.File
+import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -53,8 +56,9 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
     private val running = AtomicBoolean(false)
     private var startTime: Long = 0L
 
-    // 25 Hz
-    private val frequency = 1_000_000 / 25
+    // 60 Hz
+
+    private val frequency = 1_000_000 / 60
 
     // filas de leitura brutas
     private val accelQueue = ConcurrentLinkedQueue<JSONObject>()
@@ -455,17 +459,31 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
         
         val api = RetrofitClient.instancePessoasAPI
 
-        //  Monta sensorData com pontos válidos
-        val sensorList: List<Map<String, Any>> = result.map { json ->
-            mapOf (
-                "timestamp" to json.optString("timestamp", ""),
-                "accel_x"   to json.optDouble("accel_x", 0.0),
-                "accel_y"   to json.optDouble("accel_y", 0.0),
-                "accel_z"   to json.optDouble("accel_z", 0.0),
-                "gyro_x"    to json.optDouble("gyro_x", 0.0),
-                "gyro_y"    to json.optDouble("gyro_y", 0.0),
-                "gyro_z"    to json.optDouble("gyro_z", 0.0)
-            )
+        // ✅ Converte para SensorDataPoint (tipo seguro) em vez de Map<String, Any>
+        // O result já contém dados mesclados de accel + gyro pelo tryMergeSensorData()
+        val sensorList: List<com.ufpr.equilibrium.network.SensorDataPoint> = result.mapNotNull { json ->
+            try {
+                // Get timestamp as ISO string
+                val timestampStr = json.optString("timestamp", "")
+                if (timestampStr.isEmpty()) {
+                    Log.w("Timer", "Skipping sensor point: missing timestamp")
+                    return@mapNotNull null
+                }
+                
+                // Extract merged accelerometer and gyroscope data
+                com.ufpr.equilibrium.network.SensorDataPoint(
+                    timestamp = timestampStr,  // Keep as ISO 8601 string for API
+                    accel_x = json.optDouble("accel_x", 0.0),
+                    accel_y = json.optDouble("accel_y", 0.0),
+                    accel_z = json.optDouble("accel_z", 0.0),
+                    gyro_x = json.optDouble("gyro_x", 0.0),
+                    gyro_y = json.optDouble("gyro_y", 0.0),
+                    gyro_z = json.optDouble("gyro_z", 0.0)
+                )
+            } catch (e: Exception) {
+                Log.e("Timer", "Error converting sensor data point", e)
+                null
+            }
         }
 
         // ★ totalTime agora é o tempo decorrido do 5TSTS
@@ -478,11 +496,13 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
             healthcareUnitId = intent.getStringExtra("id_unidade"),
             date = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()),
             totalTime = total,                    // ★ usa o tempo real
-            sensorData = sensorList,
+            sensorData = sensorList,              // ✅ Lista tipada, não Map
             time_init = isoUtc(startTime),
             time_end = isoUtc(System.currentTimeMillis())
 
         )
+
+        Log.d("Timer", "Sending test with ${sensorList.size} sensor data points")
 
         println(teste.sensorData)
 
@@ -579,7 +599,7 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
     }
 
     // Dialog para mostrar resultado de ciclos SLS ao final do teste
-    private fun showCycleResultDialog(cycleCount: Int) {
+    private fun showCycleResultDialog( cycleCount: Int) {
         val builder = androidx.appcompat.app.AlertDialog.Builder(this@Timer)
             .setTitle("Resultado do Teste 30sSTS")
             .setMessage("Total de ciclos sentar-levantar-sentar detectados:\n\n" +
@@ -587,8 +607,91 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
             .setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()
             }
+            .setNeutralButton("📥 Baixar CSV") { dialog, _ ->
+                exportCsvData()
+                dialog.dismiss()
+            }
             .setCancelable(false)
+
         builder.show()
+    }
+
+    // Exporta os dados do sensor para arquivo CSV
+    private fun exportCsvData() {
+        try {
+            // Criar nome do arquivo com timestamp
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val patientName = PacienteManager.nome ?: "Paciente"
+            val fileName = "30sSTS_${patientName.replace(" ", "_")}_$timestamp.csv"
+            
+            // Criar diretório se não existir
+            val exportDir = File(getExternalFilesDir(null), "Exportacoes")
+            if (!exportDir.exists()) {
+                exportDir.mkdirs()
+            }
+            
+            val csvFile = File(exportDir, fileName)
+            
+            // Escrever CSV
+            FileWriter(csvFile).use { writer ->
+                // Cabeçalho
+                writer.append("timestamp,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z\n")
+                
+                // Dados
+                result.forEach { json ->
+                    writer.append(convertJsonToCsv(json))
+                }
+            }
+            
+            // Compartilhar arquivo
+            shareCsvFile(csvFile)
+            
+            Toast.makeText(
+                this,
+                "CSV exportado com sucesso!\n${csvFile.absolutePath}",
+                Toast.LENGTH_LONG
+            ).show()
+            
+            speak("CSV exportado com sucesso")
+            
+        } catch (e: Exception) {
+            Log.e("Timer", "Erro ao exportar CSV", e)
+            Toast.makeText(
+                this,
+                "Erro ao exportar CSV: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+            speak("Erro ao exportar CSV")
+        }
+    }
+    
+    // Compartilha o arquivo CSV usando o sistema de compartilhamento do Android
+    private fun shareCsvFile(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${applicationContext.packageName}.provider",
+                file
+            )
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Dados do Teste 30sSTS")
+                putExtra(Intent.EXTRA_TEXT, "Dados do sensor coletados durante o teste 30sSTS")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            startActivity(Intent.createChooser(shareIntent, "Compartilhar CSV"))
+            
+        } catch (e: Exception) {
+            Log.e("Timer", "Erro ao compartilhar CSV", e)
+            Toast.makeText(
+                this,
+                "Erro ao compartilhar arquivo",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
 

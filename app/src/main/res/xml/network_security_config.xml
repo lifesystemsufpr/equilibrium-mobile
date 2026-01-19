@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Base configuration: only HTTPS allowed by default -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Development-only cleartext domains -->
+    <!-- ONLY USE THESE FOR LOCAL DEVELOPMENT -->
     <domain-config cleartextTrafficPermitted="true">
-        <!-- Emulador -->
+        <!-- Emulator -->
         <domain includeSubdomains="true">10.0.2.2</domain>
 
-        <!-- Localhost (caso rode no próprio device) -->
+        <!-- Localhost -->
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
 
-        <!-- Redes privadas -->
+        <!-- Local network (REMOVE BEFORE PRODUCTION RELEASE) -->
         <domain includeSubdomains="true">192.168.0.0</domain>
-        <domain includeSubdomains="true">10.0.0.0</domain>
-        <domain includeSubdomains="true">172.16.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+    </domain-config>
 
-        <!-- API hostname (TLS) -->
+    <!-- Production API - HTTPS ONLY (no cleartext) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">tecnoaging.com.br</domain>
         <domain includeSubdomains="true">tecnoagingdev.duckdns.org</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
     </domain-config>
 </network-security-config>

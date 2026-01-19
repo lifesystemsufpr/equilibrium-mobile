@@ -2,8 +2,10 @@ package com.ufpr.equilibrium.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
 import com.google.gson.Gson
 import com.ufpr.equilibrium.network.Usuario
+import org.json.JSONObject
 
 object SessionManager {
     private var prefs: SharedPreferences? = null
@@ -27,13 +29,38 @@ object SessionManager {
             prefs?.edit()?.putString("USUARIO", json)?.apply()
         }
 
-
-
     fun clearSession() {
         prefs?.edit()?.clear()?.apply()
     }
 
     fun isLoggedIn(): Boolean {
-        return token != null
+        val token = this.token ?: return false
+        return isTokenValid(token)
+    }
+    
+    private fun isTokenValid(token: String): Boolean {
+        return try {
+            val payload = decodeJwtPayload(token) ?: return false
+            val exp = payload.optLong("exp", 0)
+            
+            if (exp == 0L) return true // Token doesn't have exp claim
+            
+            val currentTimeSeconds = System.currentTimeMillis() / 1000
+            exp > currentTimeSeconds // Token is valid if exp > current time
+        } catch (e: Exception) {
+            false // Invalid token format
+        }
+    }
+    
+    private fun decodeJwtPayload(token: String): JSONObject? {
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return null
+            
+            val payload = String(Base64.decode(parts[1], Base64.URL_SAFE))
+            JSONObject(payload)
+        } catch (e: Exception) {
+            null
+        }
     }
 }

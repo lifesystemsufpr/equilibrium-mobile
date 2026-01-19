@@ -19,29 +19,29 @@ interface PessoasService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequestDto): LoginResultDto
     
-    // ========== Patient Endpoints ==========
+    // ========== Participant Endpoints ==========
     
     /**
-     * Get list of patients with optional pagination and CPF filter.
+     * Get list of participants with optional pagination and CPF filter.
      */
     @GET("patient")
-    suspend fun getPatients(
+    suspend fun getParticipants(
         @Query("page") page: Int? = null,
         @Query("pageSize") pageSize: Int? = null,
         @Query("cpf") cpf: String? = null
     ): PatientsEnvelope
     
     /**
-     * Create a new patient.
+     * Create a new participant.
      */
-    @POST("patient")
-    suspend fun postPatient(@Body request: PatientRegistrationDto): PatientRegistrationDto
+    @POST("participant")
+    suspend fun postParticipant(@Body request: PatientRegistrationDto): PatientRegistrationDto
 }
 
 /**
- * Envelope response for patient list with pagination metadata.
+ * Envelope response for participant list with pagination metadata.
  */
-data class PatientsEnvelope(
+data class PatientsEnvelope (
     val data: List<PatientDto>,
     val meta: PaginationMeta?
 )
@@ -49,7 +49,7 @@ data class PatientsEnvelope(
 /**
  * Pagination metadata.
  */
-data class PaginationMeta(
+data class PaginationMeta (
     val total: Int?,
     val page: Int?,
     val pageSize: Int?,

@@ -41,6 +41,7 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/finish"
         app:srcCompat="@drawable/ic_check"
+        app:tint="@android:color/white"
         app:layout_anchor="@id/rvQuestions"
         app:layout_anchorGravity="bottom|end"
         android:layout_margin="16dp"

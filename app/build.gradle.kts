@@ -17,11 +17,13 @@ android {
         applicationId = "com.ufpr.equilibrium"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 9
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
+
+
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
@@ -34,6 +36,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Enable logging in release for debugging (remove after fixing)
+            buildConfigField("Boolean", "ENABLE_LOGGING", "true")
+        }
+        debug {
+            buildConfigField("Boolean", "ENABLE_LOGGING", "true")
         }
     }
     compileOptions {
@@ -43,11 +51,11 @@ android {
     }
 
 
-
     kotlinOptions {
         jvmTarget = "1.8"
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 }

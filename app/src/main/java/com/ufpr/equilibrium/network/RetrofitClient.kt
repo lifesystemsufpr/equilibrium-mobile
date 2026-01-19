@@ -8,7 +8,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object  RetrofitClient {
-    private val BASE_URL = "https://tecnoaging.com.br/backend/"
+    private val BASE_URL = "https://devenv.tecnoaging.com.br/backend/"
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }

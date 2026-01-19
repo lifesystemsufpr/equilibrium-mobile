@@ -1,0 +1,94 @@
+﻿> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :core-common:preBuild UP-TO-DATE
+> Task :core-common:preDebugBuild UP-TO-DATE
+> Task :core-common:generateDebugResValues UP-TO-DATE
+> Task :core-common:generateDebugResources UP-TO-DATE
+> Task :core-common:packageDebugResources UP-TO-DATE
+> Task :data:preBuild UP-TO-DATE
+> Task :data:preDebugBuild UP-TO-DATE
+> Task :data:generateDebugResValues UP-TO-DATE
+> Task :data:generateDebugResources UP-TO-DATE
+> Task :data:packageDebugResources UP-TO-DATE
+> Task :domain:preBuild UP-TO-DATE
+> Task :domain:preDebugBuild UP-TO-DATE
+> Task :domain:generateDebugResValues UP-TO-DATE
+> Task :domain:generateDebugResources UP-TO-DATE
+> Task :domain:packageDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :core-common:parseDebugLocalResources UP-TO-DATE
+> Task :core-common:generateDebugRFile UP-TO-DATE
+> Task :data:parseDebugLocalResources UP-TO-DATE
+> Task :data:generateDebugRFile UP-TO-DATE
+> Task :domain:parseDebugLocalResources UP-TO-DATE
+> Task :domain:generateDebugRFile UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :core-common:writeDebugAarMetadata UP-TO-DATE
+> Task :data:writeDebugAarMetadata UP-TO-DATE
+> Task :domain:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :core-common:extractDeepLinksDebug UP-TO-DATE
+> Task :core-common:processDebugManifest UP-TO-DATE
+> Task :data:extractDeepLinksDebug UP-TO-DATE
+> Task :data:processDebugManifest UP-TO-DATE
+> Task :domain:extractDeepLinksDebug UP-TO-DATE
+> Task :domain:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :core-common:compileDebugLibraryResources UP-TO-DATE
+> Task :data:compileDebugLibraryResources UP-TO-DATE
+> Task :domain:compileDebugLibraryResources UP-TO-DATE
+> Task :core-common:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core-common:javaPreCompileDebug UP-TO-DATE
+> Task :data:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :data:generateDebugBuildConfig UP-TO-DATE
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:javaPreCompileDebug UP-TO-DATE
+> Task :data:javaPreCompileDebug UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :core-common:compileDebugKotlin
+> Task :core-common:compileDebugJavaWithJavac NO-SOURCE
+> Task :core-common:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-common:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :domain:compileDebugKotlin
+> Task :domain:compileDebugJavaWithJavac NO-SOURCE
+> Task :domain:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :domain:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:processDebugResources
+
+> Task :data:kaptGenerateStubsDebugKotlin
+w: K2 kapt is an experimental feature. Use with caution.
+
+> Task :data:kaptDebugKotlin
+> Task :data:compileDebugKotlin
+> Task :data:compileDebugJavaWithJavac
+> Task :data:transformDebugClassesWithAsm UP-TO-DATE
+> Task :data:bundleLibCompileToJarDebug UP-TO-DATE
+
+> Task :app:kaptGenerateStubsDebugKotlin
+w: K2 kapt is an experimental feature. Use with caution.
+
+> Task :app:kaptDebugKotlin
+[WARN] Issue detected with dagger.internal.codegen.ComponentProcessor. Expected 1 originating source file when generating C:\Users\joaov\OneDrive\Documentos\projetos\tecnoaging\equilibrium-mobile\app\build\tmp\kapt3\classes\debug\META-INF\proguard\com_ufpr_equilibrium_feature_loginLoginViewModel_HiltModules_BindsModule_LazyClassKeys.pro, but detected 0: [].
+
+> Task :app:compileDebugKotlin
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_login/LoginActivity.kt:82:24 'fun launchWhenStarted(block: suspend CoroutineScope.() -> Unit): Job' is deprecated. launchWhenStarted is deprecated as it can lead to wasted resources in some cases. Replace with suspending repeatOnLifecycle to run the block whenever the Lifecycle state is at least Lifecycle.State.STARTED.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_paciente/HistoricoActivity.kt:33:19 'fun setOnNavigationItemSelectedListener(p0: BottomNavigationView.OnNavigationItemSelectedListener?): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_paciente/HomePaciente.kt:110:19 'fun setOnNavigationItemSelectedListener(p0: BottomNavigationView.OnNavigationItemSelectedListener?): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_paciente/MetricasActivity.kt:32:19 'fun setOnNavigationItemSelectedListener(p0: BottomNavigationView.OnNavigationItemSelectedListener?): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_professional/AtualizarProfissionalActivity.kt:58:19 'fun setOnNavigationItemSelectedListener(p0: BottomNavigationView.OnNavigationItemSelectedListener?): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_professional/HomeProfissional.kt:106:19 'fun setOnNavigationItemSelectedListener(p0: BottomNavigationView.OnNavigationItemSelectedListener?): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Users/joaov/OneDrive/Documentos/projetos/tecnoaging/equilibrium-mobile/app/src/main/java/com/ufpr/equilibrium/feature_questionnaire/QuestionnaireAdapter.kt:163:45 Unchecked cast of 'kotlin.Any!' to 'kotlin.Pair<kotlin.Int, kotlin.Int>'.
+
+BUILD SUCCESSFUL in 22s
+62 actionable tasks: 13 executed, 49 up-to-date

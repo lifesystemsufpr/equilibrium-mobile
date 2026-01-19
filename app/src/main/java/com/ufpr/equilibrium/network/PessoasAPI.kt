@@ -1,6 +1,7 @@
 package com.ufpr.equilibrium.network
 
 import com.ufpr.equilibrium.feature_healthUnit.HealthUnit
+import com.ufpr.equilibrium.feature_healthUnit.HealthUnitEnvelope
 import com.ufpr.equilibrium.feature_professional.PacienteModel
 import com.ufpr.equilibrium.feature_professional.PacientesEnvelope
 import com.ufpr.equilibrium.feature_professional.ProfessionalModel
@@ -13,10 +14,13 @@ import retrofit2.http.Query
 
 import retrofit2.http.*
 
+/**
+ * API interface for Pessoas endpoints.
+ * Note: Method names use "Participant" but model classes remain unchanged for compatibility.
+ */
 interface PessoasAPI {
 
-    // Se o backend busca por CPF, alinhe o nome do query param
-    // (no seu código estava "upc", que parece errado).
+    // Lookup person by CPF
     @GET("lookup")
     fun getPessoaByCpf(
         @Query("cpf") cpf: String
@@ -24,41 +28,42 @@ interface PessoasAPI {
 
     // legacy login removed; use data module AuthRepositoryImpl
 
-    // /participant -> envelope com data + meta (como no seu log)
+    // GET /participant -> envelope with data + meta
     @GET("participant")
-    fun getPacientes(
-        // opcional: suporte a paginação do backend
+    fun getParticipants(
+        // optional: backend pagination support
         @Query("page") page: Int? = null,
         @Query("pageSize") pageSize: Int? = null,
-        // opcional: busca por CPF
+        // optional: search by CPF
         @Query("cpf") cpf: String? = null
     ): Call<PacientesEnvelope>
 
-    // /participant aceita o JSON plano do PacienteModel (sem "user")
+    // POST /participant - accepts plain JSON (without "user" wrapper)
     @POST("participant")
-    fun postPatient(
+    fun postParticipant(
         @Body request: PacienteModel
     ): Call<PacienteModel>
 
+    // POST /evaluation - submit test/evaluation data
     @POST("evaluation")
     fun postTestes(
         @Body request: Teste,
         @Header("Authorization") token: String
     ): Call<Teste>
 
-    // GET evaluations for a participant (returns list of evaluation objects)
+    // GET /evaluation - get evaluations for a participant
     @GET("evaluation")
     fun getEvaluations(
         @Query("participantId") participantId: String
     ): Call<EvaluationsEnvelope>
 
-    // Provável que também exija auth — adicione se o backend requer
+    // POST /healthProfessional - register health professional
     @POST("healthProfessional")
     fun postProfessional(
         @Body request: ProfessionalModel,
     ): Call<ProfessionalModel>
 
-    // /health-unit: confira se retorna lista “plana” mesmo.
+    // GET /health-unit - get list of health units
     @GET("health-unit")
-    fun getHealthUnit(): Call<List<HealthUnit>>
+    fun getHealthUnit(): Call<HealthUnitEnvelope>
 }

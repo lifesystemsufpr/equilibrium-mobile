@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this@MainActivity, HomePaciente::class.java))
                 finish() // Fecha a MainActivity para não voltar para ela
             }
+        } else if (savedInstanceState == null && SessionManager.token != null) {
+            // Token exists but is expired - clear session
+            SessionManager.clearSession()
+            android.widget.Toast.makeText(this, "Sessão expirada. Faça login novamente.", android.widget.Toast.LENGTH_SHORT).show()
         }
 
         // Configura o comportamento do botão voltar: fecha o app

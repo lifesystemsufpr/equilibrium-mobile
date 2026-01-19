@@ -66,14 +66,14 @@ class HealthUnitActivity : AppCompatActivity() {
     private fun handlerHealthUnits() {
         val call = pessoasAPI.getHealthUnit()
 
-        call.enqueue(object : Callback<List<HealthUnit>> {
+        call.enqueue(object : Callback<HealthUnitEnvelope> {
             override fun onResponse(
-                call: Call<List<HealthUnit>>,
-                response: Response<List<HealthUnit>>
+                call: Call<HealthUnitEnvelope>,
+                response: Response<HealthUnitEnvelope>
             ) {
 
                 if (response.isSuccessful && response.body() != null) {
-                    healthUnitList = response.body()!!
+                    healthUnitList = response.body()!!.data
 
                     val nomes = healthUnitList.map { it.name }
 
@@ -111,7 +111,7 @@ class HealthUnitActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onFailure(call: Call<List<HealthUnit>>, t: Throwable) {
+            override fun onFailure(call: Call<HealthUnitEnvelope>, t: Throwable) {
                 Log.e("API", "Falha na requisição", t)
                 Toast.makeText(this@HealthUnitActivity, getString(R.string.error_network), Toast.LENGTH_SHORT).show()
             }

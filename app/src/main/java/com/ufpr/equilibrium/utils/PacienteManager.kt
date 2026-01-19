@@ -33,6 +33,9 @@ object PacienteManager {
             android.util.Log.d("PacienteManager", "UUID saved to SharedPreferences")
         }
 
+    var nome: String?
+        get() = prefs?.getString("nome", null)
+        set(value) = prefs?.edit()?.putString("nome", value)?.apply()!!
 
     fun clearPacienteCpf() {
         prefs?.edit()?.clear()?.apply()

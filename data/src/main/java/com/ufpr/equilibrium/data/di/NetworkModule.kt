@@ -42,9 +42,16 @@ object NetworkModule {
         authInterceptor: AuthInterceptor,
         unauthorizedInterceptor: UnauthorizedInterceptor
     ): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
         return OkHttpClient.Builder()
-            .addInterceptor(logging)
+            .apply {
+                // Enable logging in debug or when explicitly enabled in release
+                if (BuildConfig.DEBUG || BuildConfig.ENABLE_LOGGING) {
+                    val logging = HttpLoggingInterceptor().apply { 
+                        level = HttpLoggingInterceptor.Level.BODY 
+                    }
+                    addInterceptor(logging)
+                }
+            }
             .addInterceptor(authInterceptor)
             .addInterceptor(unauthorizedInterceptor)
             .build()
