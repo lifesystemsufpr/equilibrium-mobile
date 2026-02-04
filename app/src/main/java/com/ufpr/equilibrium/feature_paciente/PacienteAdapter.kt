@@ -119,15 +119,32 @@ class PacienteAdapter(
     }
 
     /**
-     * Filter patients by CPF (ignores formatting).
+     * Filter patients by CPF or name.
+     * Accepts partial matches for both fields.
      */
-    fun filtrarPorCpf(cpf: String) {
-        val query = cpf.filter { it.isDigit() }
-        pacientesFiltrados = if (query.isBlank()) {
+    fun filtrar(query: String) {
+        val normalizedQuery = query.trim().lowercase()
+        pacientesFiltrados = if (normalizedQuery.isBlank()) {
             pacientes
         } else {
-            pacientes.filter { it.cpf.filter(Char::isDigit).contains(query) }
+            pacientes.filter { paciente ->
+                // Filter by CPF (remove formatting)
+                val cpfDigits = query.filter { it.isDigit() }
+                val matchesCpf = cpfDigits.isNotEmpty() && 
+                                 paciente.cpf.filter(Char::isDigit).contains(cpfDigits)
+                
+                // Filter by name (case-insensitive)
+                val matchesName = paciente.fullName.lowercase().contains(normalizedQuery)
+                
+                matchesCpf || matchesName
+            }
         }
         notifyDataSetChanged()
     }
+
+    /**
+     * @deprecated Use filtrar() instead. Kept for backward compatibility.
+     */
+    @Deprecated("Use filtrar() instead", ReplaceWith("filtrar(cpf)"))
+    fun filtrarPorCpf(cpf: String) = filtrar(cpf)
 }

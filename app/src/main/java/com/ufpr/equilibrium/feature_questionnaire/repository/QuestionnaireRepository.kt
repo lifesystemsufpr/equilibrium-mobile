@@ -147,17 +147,9 @@ class QuestionnaireRepository @Inject constructor() {
                     if (response.isSuccessful && response.body() != null) {
                         val body = response.body()!!
                         android.util.Log.d("QuestionnaireRepo", "Structure ID: ${body.id}")
-                        android.util.Log.d("QuestionnaireRepo", "Structure name: ${body.name}")
-                        android.util.Log.d("QuestionnaireRepo", "Questions null: ${body.questions == null}")
-                        android.util.Log.d("QuestionnaireRepo", "Questions size: ${body.questions?.size ?: 0}")
-                        
-                        // Log raw response for debugging
-                        try {
-                            val rawJson = response.raw().peekBody(Long.MAX_VALUE).string()
-                            android.util.Log.d("QuestionnaireRepo", "Raw JSON response: $rawJson")
-                        } catch (e: Exception) {
-                            android.util.Log.e("QuestionnaireRepo", "Error reading raw response", e)
-                        }
+                        android.util.Log.d("QuestionnaireRepo", "Structure title: ${body.title}")
+                        android.util.Log.d("QuestionnaireRepo", "Groups null: ${body.groups == null}")
+                        android.util.Log.d("QuestionnaireRepo", "Groups size: ${body.groups?.size ?: 0}")
                         
                         onSuccess(body)
                     } else {

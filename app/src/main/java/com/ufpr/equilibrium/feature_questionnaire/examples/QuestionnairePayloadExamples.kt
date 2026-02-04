@@ -27,9 +27,10 @@ object QuestionnairePayloadExamples {
                 val localQuestions = QuestionnaireMapper.mapToLocalQuestions(structure)
                 
                 // Criar mapeamento IDs locais -> IDs da API
-                val idMapping = QuestionnaireMapper.createIdMapping(structure)
+                // NOTA: createIdMapping foi removido após atualização da estrutura da API
+                // val idMapping = QuestionnaireMapper.createIdMapping(structure)
                 
-                println("✅ Questionário carregado: ${structure.name}")
+                println("✅ Questionário carregado: ${structure.title}")
                 println("   Total de questões: ${localQuestions.size}")
                 println("   ID do questionário: ${structure.id}")
                 
@@ -180,19 +181,19 @@ object QuestionnairePayloadExamples {
                 val questionnaireId = structure.id
                 
                 // Criar mapeamento de IDs
-                val idMapping = QuestionnaireMapper.createIdMapping(structure)
+                // NOTA: createIdMapping foi removido após atualização da estrutura da API
+                // val idMapping = QuestionnaireMapper.createIdMapping(structure)
                 
                 // Passo 2: Simular respostas do usuário
                 // (em produção, isso viria da UI)
-                val localAnswers = mapOf(
-                    0 to "09086cb8-0f47-4a15-9f2f-0f953dd6d1e2",  // Questão 0 -> Opção X
-                    1 to "4fc15a8a-1c4c-45f9-9b9a-b360cd69d93c"   // Questão 1 -> Opção Y
+                // NOTA: Agora usa UUIDs das questões diretamente (não índices)
+                val apiAnswers = mapOf(
+                    "2f01fd40-870f-4791-9948-69aec70d23e9" to "4cda2216-875e-4fe4-83a4-16e60586b378",  // Questão Idade -> 60-74 anos
+                    "6b092b38-06cf-4688-925e-b44f2e1d0e74" to "8729a7c3-4902-4116-badc-db1a5119347e"   // Questão Saúde -> Excelente/boa
                 )
                 
-                // Passo 3: Converter IDs locais para IDs da API
-                val apiAnswers = localAnswers.mapKeys { (localId, _) ->
-                    idMapping[localId] ?: throw IllegalStateException("ID local não encontrado")
-                }
+                // Passo 3: Os IDs já são UUIDs corretos da API
+                // Não precisa mais converter
                 
                 println("✅ Passo 2: Respostas coletadas (${apiAnswers.size} respostas)")
                 

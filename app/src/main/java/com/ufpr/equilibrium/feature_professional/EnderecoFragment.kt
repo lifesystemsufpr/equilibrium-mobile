@@ -51,6 +51,7 @@ class EnderecoFragment : Fragment() {
     private lateinit var cidade: EditText
     private lateinit var uf: EditText
     private lateinit var loadingOverlay: View
+    private var cepProgressDialog: AlertDialog? = null
 
     private lateinit var ruaAdapter: ArrayAdapter<String>
     private lateinit var bairroAdapter: ArrayAdapter<String>
@@ -147,6 +148,24 @@ class EnderecoFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val digits = s?.toString()?.replace(Regex("[^\\d]"), "") ?: ""
+                
+                // Apply CEP mask: XXXXX-XXX
+                val formatted = when {
+                    digits.isEmpty() -> ""
+                    digits.length <= 5 -> digits
+                    digits.length <= 8 -> "${digits.substring(0, 5)}-${digits.substring(5)}"
+                    else -> "${digits.substring(0, 5)}-${digits.substring(5, 8)}"
+                }
+                
+                // Update text only if it changed to avoid infinite loop
+                if (formatted != s.toString()) {
+                    cep.removeTextChangedListener(this)
+                    cep.setText(formatted)
+                    cep.setSelection(formatted.length)
+                    cep.addTextChangedListener(this)
+                }
+                
+                // Fetch address when 8 digits are complete
                 if (digits.length == 8) fetchAddressByCep(digits)
             }
         })
@@ -298,52 +317,68 @@ class EnderecoFragment : Fragment() {
                 )
             )
 
-            loadingOverlay.visibility = View.VISIBLE
+            // Show confirmation dialog before submitting
+            // Format birth date as password (DDMMAAAA without special characters)
+            val passwordFormat = viewModel.dataNasc.value?.replace("/", "") ?: ""
+            
+            AlertDialog.Builder(requireContext())
+                .setTitle("Confirmação de Senha")
+                .setMessage("A data de nascimento do participante será utilizada como sua senha de acesso ao sistema.\n\nSenha: $passwordFormat\n\nDeseja continuar com o cadastro?")
+                .setPositiveButton("Confirmar") { dialog, _ ->
+                    dialog.dismiss()
+                    
+                    loadingOverlay.visibility = View.VISIBLE
 
-            // Use coroutines to call repository
-            lifecycleScope.launch {
-                when (val result = patientRepository.createPatient(patient)) {
-                    is Result.Success -> {
-                        loadingOverlay.visibility = View.GONE
-                        AlertDialog.Builder(requireContext())
-                            .setTitle("Cadastro concluído")
-                            .setMessage("O paciente foi cadastrado com sucesso!")
-                            .setPositiveButton("OK") { dialog, _ ->
-                                dialog.dismiss()
+                    // Use coroutines to call repository
+                    lifecycleScope.launch {
+                        when (val result = patientRepository.createPatient(patient)) {
+                            is Result.Success -> {
+                                loadingOverlay.visibility = View.GONE
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("Cadastro concluído")
+                                    .setMessage("O paciente foi cadastrado com sucesso!")
+                                    .setPositiveButton("OK") { successDialog, _ ->
+                                        successDialog.dismiss()
 
-                                if (SessionManager.isLoggedIn()) {
-                                    val intent = Intent(requireContext(), HomeProfissional::class.java)
-                                    startActivity(intent)
-                                } else {
-                                    val intent = Intent(requireContext(), LoginActivity::class.java)
-                                    startActivity(intent)
-                                }
+                                        if (SessionManager.isLoggedIn()) {
+                                            val intent = Intent(requireContext(), HomeProfissional::class.java)
+                                            startActivity(intent)
+                                        } else {
+                                            val intent = Intent(requireContext(), LoginActivity::class.java)
+                                            startActivity(intent)
+                                        }
 
-                                requireActivity().finish()
+                                        requireActivity().finish()
+                                    }
+                                    .show()
                             }
-                            .show()
-                    }
-                    is Result.Error -> {
-                        loadingOverlay.visibility = View.GONE
-                        val errorMessage = result.cause.message ?: "Erro desconhecido"
-                        Log.e("EnderecoFragment", "Error creating patient", result.cause)
-                        
-                        val message = if (errorMessage.contains("409") || errorMessage.contains("conflict")) {
-                            "Já existe um paciente cadastrado com este CPF"
-                        } else if (errorMessage.contains("400")) {
-                            "Dados inválidos. Por favor, verifique todos os campos."
-                        } else {
-                            "Erro ao cadastrar paciente. Tente novamente."
+                            is Result.Error -> {
+                                loadingOverlay.visibility = View.GONE
+                                val errorMessage = result.cause.message ?: "Erro desconhecido"
+                                Log.e("EnderecoFragment", "Error creating patient", result.cause)
+                                
+                                val message = if (errorMessage.contains("409") || errorMessage.contains("conflict")) {
+                                    "Já existe um paciente cadastrado com este CPF"
+                                } else if (errorMessage.contains("400")) {
+                                    "Dados inválidos. Por favor, verifique todos os campos."
+                                } else {
+                                    "Erro ao cadastrar paciente. Tente novamente."
+                                }
+                                
+                                AlertDialog.Builder(requireContext())
+                                    .setTitle("Erro")
+                                    .setMessage(message)
+                                    .setPositiveButton("OK") { errorDialog, _ -> errorDialog.dismiss() }
+                                    .show()
+                            }
                         }
-                        
-                        AlertDialog.Builder(requireContext())
-                            .setTitle("Erro")
-                            .setMessage(message)
-                            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                            .show()
                     }
                 }
-            }
+                .setNegativeButton("Cancelar") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .setCancelable(false)
+                .show()
         } catch (e: Exception) {
             loadingOverlay.visibility = View.GONE
             Log.e("EnderecoFragment", "Error submitting patient data", e)
@@ -356,6 +391,15 @@ class EnderecoFragment : Fragment() {
     }
 
     private fun fetchAddressByCep(cep: String) {
+        // Show progress dialog
+        requireActivity().runOnUiThread {
+            cepProgressDialog = AlertDialog.Builder(requireContext())
+                .setMessage("Buscando endereço...")
+                .setCancelable(false)
+                .create()
+            cepProgressDialog?.show()
+        }
+        
         val client = OkHttpClient()
         val request = Request.Builder()
             .url("https://viacep.com.br/ws/$cep/json/")
@@ -363,6 +407,9 @@ class EnderecoFragment : Fragment() {
 
         client.newCall(request).enqueue(object : okhttp3.Callback {
             override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                requireActivity().runOnUiThread {
+                    cepProgressDialog?.dismiss()
+                }
                 Log.e("ViaCEP", "Falha ao buscar CEP", e)
             }
 
@@ -378,6 +425,9 @@ class EnderecoFragment : Fragment() {
                     val ufValue = json.optString("uf")
 
                     requireActivity().runOnUiThread {
+                        // Dismiss progress dialog
+                        cepProgressDialog?.dismiss()
+                        
                         // Update text
                         if (logradouro.isNotBlank()) rua.setText(logradouro)
                         if (bairroValue.isNotBlank()) bairro.setText(bairroValue)

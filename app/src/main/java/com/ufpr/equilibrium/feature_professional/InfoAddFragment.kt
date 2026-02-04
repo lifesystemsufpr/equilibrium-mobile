@@ -38,11 +38,11 @@ class InfoAddFragment : Fragment() {
     )
 
     private val nivelSocioMap = mapOf(
-        "Classe A" to "A",
-        "Classe B" to "B",
-        "Classe C" to "C",
-        "Classe D" to "D",
-        "Classe E" to "E"
+        "A (acima de R$ 21.000)" to "A",
+        "B (R$ 10.800 a R$ 20.999)" to "B",
+        "C (R$ 4.800 a R$ 10.799)" to "C",
+        "D (R$ 2.400 a R$ 4.799)" to "D",
+        "E (até R$ 2.399)" to "E"
     )
 
     override fun onCreateView(

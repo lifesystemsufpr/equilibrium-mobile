@@ -37,8 +37,8 @@ class QuestionnaireAdapter(
         questions.forEach { question ->
             // Adicionar cabeçalho se for um grupo novo
             if (question.groupId != null && question.groupId != lastGroupId) {
-                val groupTitle = IVCF20Questions.groups
-                    .find { it.id == question.groupId }?.name ?: question.groupId
+                // Usa o groupName diretamente da questão (vem da API)
+                val groupTitle = question.groupName ?: question.groupId
                 result.add(QuestionnaireItem.Header(question.groupId, groupTitle))
                 lastGroupId = question.groupId
             }

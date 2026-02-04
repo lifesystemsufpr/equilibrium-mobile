@@ -118,8 +118,8 @@ class ListagemPacientes : AppCompatActivity() {
                 val filterText = s.toString()
                 currentFilter = filterText
                 
-                // Primeiro tenta filtrar localmente
-                pacienteAdapter.filtrarPorCpf(filterText)
+                // Primeiro tenta filtrar localmente (CPF ou nome)
+                pacienteAdapter.filtrar(filterText)
                 
                 // Se o filtro tem 11 dígitos (CPF completo) e não encontrou localmente, busca no servidor
                 val cpfDigits = filterText.filter { it.isDigit() }
@@ -208,7 +208,7 @@ class ListagemPacientes : AppCompatActivity() {
                             // Ordena alfabeticamente por nome
                             pacientes.sortBy { it.fullName }
                             pacienteAdapter.atualizarLista(pacientes.toList())
-                            pacienteAdapter.filtrarPorCpf(currentFilter)
+                            pacienteAdapter.filtrar(currentFilter)
                         }
                     }
                 }
@@ -265,7 +265,7 @@ class ListagemPacientes : AppCompatActivity() {
                     // Atualiza o adapter com a lista completa e reaplica o filtro se houver
                     pacienteAdapter.atualizarLista(pacientes.toList())
                     if (currentFilter.isNotEmpty()) {
-                        pacienteAdapter.filtrarPorCpf(currentFilter)
+                        pacienteAdapter.filtrar(currentFilter)
                     }
                 } else {
                     // Em caso de erro, volta a página anterior

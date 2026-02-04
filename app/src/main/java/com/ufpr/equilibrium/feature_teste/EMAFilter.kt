@@ -34,6 +34,7 @@ class EMAFilter(private val alpha: Double = 0.3) {
     
     /**
      * Reinicia o filtro para estado inicial
+     * ]
      * Usar quando iniciar nova sessão de coleta
      */
     fun reset() {

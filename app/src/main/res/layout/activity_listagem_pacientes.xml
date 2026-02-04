@@ -58,7 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
-            android:hint="Digite um CPF"
+            android:hint="Digite CPF ou nome"
             android:paddingStart="@dimen/space_16"
             android:paddingEnd="48dp"
             android:paddingTop="@dimen/space_8"

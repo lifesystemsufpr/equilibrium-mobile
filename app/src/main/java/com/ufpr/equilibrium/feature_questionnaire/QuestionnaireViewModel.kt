@@ -27,12 +27,60 @@ class QuestionnaireViewModel @Inject constructor(
 
     /**
      * Load questions for a specific questionnaire.
+     * Fetches from API using authenticated token.
      */
     fun loadQuestions(questionnaireId: String = "ivcf20") {
         viewModelScope.launch {
-            // Load from IVCF20Questions hardcoded list
-            val questions = IVCF20Questions.firstThreeGroupsQuestions
-            _uiState.update { it.copy(questions = questions, isLoading = false) }
+            // Set loading state
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            
+            // Get authentication token from SessionManager
+            val token = com.ufpr.equilibrium.utils.SessionManager.token
+            
+            if (token == null) {
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false, 
+                        error = "Erro: Usuário não autenticado. Faça login novamente."
+                    ) 
+                }
+                return@launch
+            }
+            
+            // Fetch questionnaire structure from API
+            questionnaireRepository.getIVCF20QuestionnaireStructure(
+                token = token,
+                onSuccess = { response ->
+                    // Convert API DTOs to local Question models using mapper
+                    val questions = com.ufpr.equilibrium.feature_questionnaire.mappers.QuestionnaireMapper
+                        .mapToLocalQuestions(response)
+                    
+                    // Capture the real questionnaire ID from API response
+                    val questionnaireId = response.id
+                    
+                    android.util.Log.d("QuestionnaireVM", "Successfully loaded ${questions.size} questions from API")
+                    android.util.Log.d("QuestionnaireVM", "Questionnaire ID: $questionnaireId")
+                    
+                    _uiState.update { 
+                        it.copy(
+                            questions = questions,
+                            questionnaireId = questionnaireId,  // Store the real ID from API
+                            isLoading = false,
+                            error = null
+                        ) 
+                    }
+                },
+                onError = { error ->
+                    android.util.Log.e("QuestionnaireVM", "Failed to load questions: $error")
+                    
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false, 
+                            error = "Erro ao carregar questionário: $error"
+                        ) 
+                    }
+                }
+            )
         }
     }
 
@@ -105,6 +153,16 @@ class QuestionnaireViewModel @Inject constructor(
     }
 
     /**
+     * Get maximum possible score based on loaded questions.
+     */
+    fun getMaxScore(): Int {
+        val questions = _uiState.value.questions
+        return questions.sumOf { question ->
+            question.options.maxOfOrNull { it.score } ?: 0
+        }
+    }
+
+    /**
      * Validate if all questions are answered.
      */
     fun isComplete(): Boolean {
@@ -142,8 +200,14 @@ class QuestionnaireViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
-            // Use fixed questionnaireId for IVCF-20
-            val questionnaireId = IVCF20QuestionMapping.QUESTIONNAIRE_ID
+            // Use the questionnaire ID from state (captured during loading)
+            val questionnaireId = _uiState.value.questionnaireId
+            
+            if (questionnaireId == null) {
+                _uiState.update { it.copy(isLoading = false, error = "Erro: ID do questionário não encontrado") }
+                onError("Erro: ID do questionário não encontrado. Recarregue o questionário.")
+                return@launch
+            }
             
             // Get loaded questions for UUID lookup
             val questions = _uiState.value.questions

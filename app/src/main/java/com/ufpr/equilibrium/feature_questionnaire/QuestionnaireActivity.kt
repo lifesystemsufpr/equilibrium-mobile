@@ -19,6 +19,7 @@ class QuestionnaireActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityQuestionnaireBinding
     private val viewModel: QuestionnaireViewModel by viewModels()
+    private var questionnaireAdapter: QuestionnaireAdapter? = null
   
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,17 +29,23 @@ class QuestionnaireActivity : AppCompatActivity() {
         // Load IVCF-20 questions via ViewModel
         viewModel.loadQuestions("ivcf20")
 
-        // Flag to track if questionnaire is already set up
-        var isSetupDone = false
+        // Setup pull-to-refresh
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.loadQuestions("ivcf20")
+        }
+
+
 
         // Observe UI state for questions
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    // Only setup questionnaire ONCE when questions are loaded
-                    if (!state.isLoading && state.questions.isNotEmpty() && !isSetupDone) {
+                    // Control loading indicator
+                    binding.swipeRefresh.isRefreshing = state.isLoading
+                    
+                    // Setup/update questionnaire when questions are loaded
+                    if (!state.isLoading && state.questions.isNotEmpty()) {
                         setupQuestionnaire(state.questions)
-                        isSetupDone = true
                     }
                     
                     state.error?.let { error ->
@@ -57,11 +64,12 @@ class QuestionnaireActivity : AppCompatActivity() {
             
             lifecycleScope.launch {
                 val total = viewModel.getTotalScore()
+                val maxScore = viewModel.getMaxScore()
                 val interpretation = viewModel.getInterpretation()
                 
                 // Build result message
                 val message = buildString {
-                    appendLine(getString(R.string.result_score, total, 14))
+                    appendLine(getString(R.string.result_score, total, maxScore))
                     appendLine()
                     appendLine(getString(R.string.result_interpretation, interpretation))
                 }
@@ -137,11 +145,15 @@ class QuestionnaireActivity : AppCompatActivity() {
     }
     
     private fun setupQuestionnaire(questions: List<Question>) {
-        val adapter = QuestionnaireAdapter(questions) { qid, idx, score, note ->
-            viewModel.onAnswerChanged(qid, idx, score, note)
+        // Se o adapter já existe, não recriar (preserva estado das respostas)
+        if (questionnaireAdapter == null) {
+            questionnaireAdapter = QuestionnaireAdapter(questions) { qid, idx, score, note ->
+                viewModel.onAnswerChanged(qid, idx, score, note)
+            }
+            
+            binding.rvQuestions.layoutManager = LinearLayoutManager(this)
+            binding.rvQuestions.adapter = questionnaireAdapter
         }
-        
-        binding.rvQuestions.layoutManager = LinearLayoutManager(this)
-        binding.rvQuestions.adapter = adapter
+        // Se já existe adapter, apenas mantém o atual (preserva seleções)
     }
 }

@@ -57,7 +57,6 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
     private var startTime: Long = 0L
 
     // 60 Hz
-
     private val frequency = 1_000_000 / 60
 
     // filas de leitura brutas

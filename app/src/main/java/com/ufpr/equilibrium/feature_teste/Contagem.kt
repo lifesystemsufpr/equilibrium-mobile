@@ -1,6 +1,10 @@
 package com.ufpr.equilibrium.feature_teste
 
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,7 +15,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.ufpr.equilibrium.R
 import java.util.Locale
 
-class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener {
+class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener, SensorEventListener {
 
     private var textToSpeech: TextToSpeech? = null
     private lateinit var viewPager: ViewPager2
@@ -21,6 +25,15 @@ class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener {
     // Contagem de 10 até 1 e depois "JÁ!"
     private val countdownList = listOf("7","6","5","4","3","2","1","JÁ!")
     private var countdownRunning = false
+    
+    // Gerenciamento de sensores
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var gyroscope: Sensor? = null
+    private var sensorsStarted = false
+    
+    // Frequência de 60 Hz
+    private val frequency = 1_000_000 / 60
 
     companion object {
         private const val INTRO_UTTERANCE_ID = "INTRO_TTS"
@@ -33,6 +46,11 @@ class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener {
         textToSpeech = TextToSpeech(this, this)
         viewPager = findViewById(R.id.viewPager)
         viewPager.adapter = ContagemAdapter(countdownList)
+        
+        // Inicializar SensorManager
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
         // Não inicia a contagem aqui; esperamos o TTS inicial terminar.
     }
@@ -78,10 +96,18 @@ class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener {
 
                     val text = countdownList[currentPage]
                     speakText(text)
+                    
+                    // Iniciar sensores quando chegar a 4 segundos (currentPage == 3)
+                    // Lista: ["7","6","5","4","3","2","1","JÁ!"]
+                    // Index:   0   1   2   3   4   5   6   7
+                    if (currentPage == 3 && !sensorsStarted) {
+                        startSensorCollection()
+                        sensorsStarted = true
+                    }
 
                     currentPage++
 
-                    // “JÁ!” fica menos tempo (300 ms) e já troca de tela
+                    // "JÁ!" fica menos tempo (300 ms) e já troca de tela
                     val delay = if (currentPage == countdownList.size) 300L else 1000L
                     handler.postDelayed(this, delay)
                 } else {
@@ -109,8 +135,34 @@ class Contagem : AppCompatActivity(), TextToSpeech.OnInitListener {
         finish()
     }
 
+    private fun startSensorCollection() {
+        sensorManager.registerListener(this, accelerometer, frequency)
+        sensorManager.registerListener(this, gyroscope, frequency)
+    }
+    
+    private fun stopSensorCollection() {
+        if (sensorsStarted) {
+            try {
+                sensorManager.unregisterListener(this)
+            } catch (_: Exception) { }
+            sensorsStarted = false
+        }
+    }
+    
+    override fun onSensorChanged(event: SensorEvent) {
+        // Os dados dos sensores não precisam ser processados aqui
+        // Este método existe apenas para permitir o "warm up" dos sensores
+        // O Timer.kt irá processar os dados quando a Activity for iniciada
+    }
+    
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // Não é necessário processar mudanças de precisão nesta tela
+    }
+
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        // Não paramos os sensores aqui para permitir continuidade com Timer.kt
+        // O Timer.kt registrará seus próprios listeners enquanto os sensores continuam ativos
         textToSpeech?.stop()
         textToSpeech?.shutdown()
         super.onDestroy()
