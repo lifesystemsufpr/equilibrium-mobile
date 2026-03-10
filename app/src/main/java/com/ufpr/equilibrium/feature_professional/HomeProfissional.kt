@@ -14,7 +14,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.BarDataSet
@@ -51,15 +50,12 @@ class HomeProfissional : AppCompatActivity() {
         // Ajusta a margem do container que envolve o BottomNavigationView (include CardView)
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // The BottomNavigationView is inside a CardView (the include). The CardView is the direct
-            // child of the ConstraintLayout, so we should update the CardView's ConstraintLayout.LayoutParams
             val parentView = view.parent
             if (parentView is android.view.View) {
                 parentView.updateLayoutParams<androidx.constraintlayout.widget.ConstraintLayout.LayoutParams> {
                     bottomMargin = systemBars.bottom
                 }
             } else {
-                // Fallback: update view's margin params generically
                 @Suppress("UNCHECKED_CAST")
                 (view.layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let {
                     it.bottomMargin = systemBars.bottom
@@ -121,51 +117,56 @@ class HomeProfissional : AppCompatActivity() {
             true
         }
 
-        // Initialize monthly gauge and chart with sample data
+        // Initialize dashboard cards and chart with sample data
         try {
-            val semicircle = findViewById<SemicircleProgressView>(R.id.semicircle)
-            val tvMonthlyPercent = findViewById<TextView>(R.id.tvMonthlyPercent)
-            val tvMeta = findViewById<TextView>(R.id.tvMetaValue)
-            val tvHoje = findViewById<TextView>(R.id.tvHojeValue)
-            val tvAvaliacoes = findViewById<TextView>(R.id.tvAvaliacoesValue)
+            val tvTotal = findViewById<TextView>(R.id.tvTotalValue)
+            val tvMasculino = findViewById<TextView>(R.id.tvMasculinoValue)
+            val tvFeminino = findViewById<TextView>(R.id.tvFemininoValue)
+            val tvMediaGlobal = findViewById<TextView>(R.id.tvMediaGlobalValue)
+            val tvMediaIndividual = findViewById<TextView>(R.id.tvMediaIndividualValue)
 
             // sample values — replace with real data
-            val percent = 0
-            semicircle.setProgress(percent, true)
-            tvMonthlyPercent.text = "${percent}%"
+            tvTotal.text = "100"
+            tvMasculino.text = "50"
+            tvFeminino.text = "50"
+            tvMediaGlobal.text = "100"
+            tvMediaIndividual.text = "120"
 
-            tvMeta.text = "100 testes"
-            tvHoje.text = "0"
-            tvAvaliacoes.text = "0"
+            // ── Bar chart ──
+            val barChart = findViewById<BarChart>(R.id.barChartMonthly)
 
-            val barChart = findViewById<BarChart>(R.id.lineChartMonthly)
-
-            // Mock monthly data (example values to show a rising then falling pattern)
             val monthlyValues = listOf(12f, 18f, 22f, 35f, 48f, 60f, 78f, 72f, 55f, 40f, 28f, 16f)
-            val entries = monthlyValues.mapIndexed { i, v -> BarEntry(i.toFloat(), v) }
+            val entries = ArrayList<BarEntry>()
+            for (i in monthlyValues.indices) {
+                entries.add(BarEntry(i.toFloat(), monthlyValues[i]))
+            }
 
-            // Determine current month to highlight and to compute 'Hoje'
             val currentMonth = Calendar.getInstance().get(Calendar.MONTH).coerceIn(0, 11)
 
             val dataSet = BarDataSet(entries, "Avaliações Mensais")
-            // build colors array: highlight current month using stronger blue
             val colors = mutableListOf<Int>()
             for (i in monthlyValues.indices) {
-                colors.add(if (i == currentMonth) resources.getColor(R.color.blue, null) else resources.getColor(R.color.blue_light, null))
+                colors.add(
+                    if (i == currentMonth) resources.getColor(R.color.blue, null)
+                    else resources.getColor(R.color.blue_light, null)
+                )
             }
             dataSet.colors = colors
             dataSet.setDrawValues(false)
 
-            val barData = BarData(dataSet)
-            barData.barWidth = 0.48f
-            barChart.data = barData
             barChart.description.isEnabled = false
             barChart.axisRight.isEnabled = false
+            barChart.legend.isEnabled = false
+            barChart.setTouchEnabled(false)
+            barChart.setPinchZoom(false)
 
             val yAxis = barChart.axisLeft
-            yAxis.setDrawGridLines(false)
+            yAxis.setDrawGridLines(true)
+            yAxis.gridColor = android.graphics.Color.parseColor("#EEEEEE")
+            yAxis.gridLineWidth = 0.8f
             yAxis.setDrawAxisLine(false)
             yAxis.setDrawLabels(false)
+            yAxis.axisMinimum = 0f
 
             val xAxis = barChart.xAxis
             xAxis.setDrawGridLines(false)
@@ -175,30 +176,18 @@ class HomeProfissional : AppCompatActivity() {
             xAxis.valueFormatter = IndexAxisValueFormatter(listOf("Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"))
             xAxis.granularity = 1f
             xAxis.labelCount = 12
-            xAxis.textSize = 11f
+            xAxis.textSize = 10f
+            xAxis.textColor = android.graphics.Color.parseColor("#666666")
 
+            val barData = BarData(dataSet)
+            barData.barWidth = 0.45f
+            barChart.data = barData
             barChart.setFitBars(true)
-            barChart.legend.isEnabled = false
-            barChart.axisLeft.axisMinimum = 0f
+            barChart.setExtraOffsets(4f, 0f, 4f, 0f)
             barChart.animateY(700)
             barChart.invalidate()
-
-            // Populate related widgets with mock-derived values
-            val total = monthlyValues.sum()
-            val todayValue = monthlyValues.getOrNull(currentMonth) ?: 0f
-            val meta = 100f
-
-            // percentage of meta achieved this month
-            val percentAchieved = ((todayValue / meta) * 100f).toInt().coerceAtMost(100)
-            semicircle.setProgress(percentAchieved, true)
-            tvMonthlyPercent.text = "${percentAchieved}%"
-
-            tvMeta.text = "${meta.toInt()} testes"
-            tvHoje.text = todayValue.toInt().toString()
-            tvAvaliacoes.text = total.toInt().toString()
         } catch (t: Throwable) {
-            // If chart library or views are not available, fail silently to avoid crashing the Activity
-            t.printStackTrace()
+            android.util.Log.e("HomeProfissional", "Error initializing chart", t)
         }
 
         // Hamburger menu (icMenu) -> mostra opções: Alterar dados, Sair

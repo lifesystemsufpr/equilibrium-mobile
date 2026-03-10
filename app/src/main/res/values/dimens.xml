@@ -25,6 +25,10 @@
     <dimen name="icon_touch">24dp</dimen>
     <dimen name="semicircle_stroke">14dp</dimen>
     <dimen name="semicircle_dot_radius">6dp</dimen>
+
+    <!-- Default FAB margin used by layout variants -->
+    <dimen name="fab_margin">48dp</dimen>
+
     <!-- Launcher foreground size to scale app icon appropriately -->
     <dimen name="ic_launcher_foreground_size">10dp</dimen>
 </resources>

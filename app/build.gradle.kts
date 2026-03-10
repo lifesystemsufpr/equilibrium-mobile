@@ -17,7 +17,7 @@ android {
         applicationId = "com.ufpr.equilibrium"
         minSdk = 24
         targetSdk = 35
-        versionCode = 9
+        versionCode = 11
         versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

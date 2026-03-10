@@ -1,21 +1,28 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+############################################################
+#  PROGUARD / R8 RULES — EQUILIBRIUM ANDROID
+#  Retrofit + Gson + Coroutines + Hilt + Kotlin
+############################################################
 
-# ========== CRITICAL: Preserve Generic Type Information ==========
-# R8 full mode strips generic signatures - this causes ClassCastException!
--keepattributes Signature,InnerClasses,EnclosingMethod
--keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
+##############################
+# GENERICS / METADATA (CRITICAL)
+##############################
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations
+-keepattributes RuntimeVisibleParameterAnnotations
 -keepattributes AnnotationDefault
+-keepattributes Exceptions
 
-# Keep source file names and line numbers for better crash reports
+##############################
+# DEBUG SYMBOLS (CRASH REPORTS)
+##############################
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
-# ========== Retrofit/OkHttp ==========
+############################################################
+# RETROFIT / OKHTTP / OKIO
+############################################################
 -dontwarn retrofit2.**
 -dontwarn okhttp3.**
 -dontwarn okio.**
@@ -24,83 +31,140 @@
 -keep class okhttp3.** { *; }
 -keep class okio.** { *; }
 
--keepattributes Exceptions
+# KEEP ALL RETROFIT API INTERFACES (CRITICAL)
+-keep interface com.ufpr.equilibrium.**Api { *; }
+-keep interface com.ufpr.equilibrium.**Service { *; }
+-keep interface com.ufpr.equilibrium.data.remote.** { *; }
+-keep interface com.ufpr.equilibrium.network.** { *; }
 
-# Keep Retrofit service interfaces
--keep,allowobfuscation,allowshrinking interface retrofit2.Call
--keep,allowobfuscation,allowshrinking class retrofit2.Response
--keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
-
-# ========== Gson ==========
--keepattributes Signature
--keepattributes *Annotation*
+############################################################
+# GSON
+############################################################
 -dontwarn sun.misc.**
-
 -keep class com.google.gson.** { *; }
--keep class * implements com.google.gson.TypeAdapter
--keep class * implements com.google.gson.TypeAdapterFactory
--keep class * implements com.google.gson.JsonSerializer
--keep class * implements com.google.gson.JsonDeserializer
 
-# Preserve all fields annotated with @SerializedName
--keepclassmembers,allowobfuscation class * {
-  @com.google.gson.annotations.SerializedName <fields>;
+# KEEP ALL CLASSES WITH @SerializedName FIELDS
+-keep class * {
+    @com.google.gson.annotations.SerializedName <fields>;
 }
 
-# Keep generic signature of Call, Response (R8 full mode strips signatures)
--keepattributes Signature,InnerClasses,EnclosingMethod
--keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
+# KEEP TYPE ADAPTERS
+-keep class * implements com.google.gson.TypeAdapter { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory { *; }
+-keep class * implements com.google.gson.JsonSerializer { *; }
+-keep class * implements com.google.gson.JsonDeserializer { *; }
 
-# ========== ALL Data Transfer Objects ==========
-# CRITICAL: Keep ALL DTOs used by Retrofit/Gson
-
-# Data module DTOs
+############################################################
+# DTOs / MODELS (NETWORK + DOMAIN)
+############################################################
 -keep class com.ufpr.equilibrium.data.remote.dto.** { *; }
--keep class com.ufpr.equilibrium.data.remote.PatientsEnvelope { *; }
--keep class com.ufpr.equilibrium.data.remote.PaginationMeta { *; }
-
-# App module DTOs (network package)
+-keep class com.ufpr.equilibrium.data.remote.** { *; }
 -keep class com.ufpr.equilibrium.network.** { *; }
-
-# Feature-specific models used by API
--keep class com.ufpr.equilibrium.feature_professional.PacienteModel { *; }
--keep class com.ufpr.equilibrium.feature_professional.User { *; }
--keep class com.ufpr.equilibrium.feature_professional.PacientesEnvelope { *; }
--keep class com.ufpr.equilibrium.feature_professional.PacienteModelList { *; }
--keep class com.ufpr.equilibrium.feature_professional.Meta { *; }
--keep class com.ufpr.equilibrium.feature_professional.ProfessionalModel { *; }
-
--keep class com.ufpr.equilibrium.feature_healthUnit.HealthUnit { *; }
-
--keep class com.ufpr.equilibrium.feature_questionnaire.api.** { *; }
--keep class com.ufpr.equilibrium.feature_questionnaire.payloads.** { *; }
-
-# Keep domain models
 -keep class com.ufpr.equilibrium.domain.model.** { *; }
 
-# ========== Kotlin Serialization (if used) ==========
--keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.AnnotationsKt
+# FEATURE MODELS
+-keep class com.ufpr.equilibrium.feature_professional.** { *; }
+-keep class com.ufpr.equilibrium.feature_healthUnit.** { *; }
+-keep class com.ufpr.equilibrium.feature_questionnaire.** { *; }
 
--keepclassmembers class kotlinx.serialization.json.** {
-    *** Companion;
-}
--keepclasseswithmembers class kotlinx.serialization.json.** {
-    kotlinx.serialization.KSerializer serializer(...);
-}
+############################################################
+# KOTLIN
+############################################################
+-keep class kotlin.Metadata { *; }
 
-# ========== Kotlin Coroutines ==========
+############################################################
+# COROUTINES
+############################################################
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
 -keepclassmembers class kotlinx.coroutines.** {
     volatile <fields>;
 }
 
-# ========== Hilt/Dagger ==========
+############################################################
+# HILT / DAGGER
+############################################################
 -dontwarn com.google.errorprone.annotations.**
+-keep class dagger.hilt.** { *; }
+-keep class javax.inject.** { *; }
+-keep class * extends dagger.hilt.internal.GeneratedComponent { *; }
 
-# ========== Debugging (ENABLE WHEN DEBUGGING PROGUARD) ==========
-# Uncomment to debug ProGuard issues:
-# -printconfiguration build/outputs/mapping/configuration.txt
-# -printusage build/outputs/mapping/usage.txt
-# -printmapping build/outputs/mapping/mapping.txt
+############################################################
+# OPTIONAL: MOSHI (se usar)
+############################################################
+#-keep class com.squareup.moshi.** { *; }
+
+############################################################
+# SAFETY: KEEP ENUM VALUES (API)
+############################################################
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+############################################################
+# SUPPRESS DESKTOP / TOOLING CLASSES NOT PRESENT ON ANDROID
+# Generated by AGP: app/build/outputs/mapping/release/missing_rules.txt
+############################################################
+-dontwarn java.awt.BorderLayout
+-dontwarn java.awt.Color
+-dontwarn java.awt.Component
+-dontwarn java.awt.Container
+-dontwarn java.awt.Dimension
+-dontwarn java.awt.FlowLayout
+-dontwarn java.awt.LayoutManager
+-dontwarn java.awt.Rectangle
+-dontwarn java.awt.event.ActionListener
+-dontwarn java.awt.event.WindowAdapter
+-dontwarn java.awt.event.WindowListener
+-dontwarn java.awt.geom.Point2D
+-dontwarn java.awt.geom.Rectangle2D$Double
+-dontwarn java.awt.geom.Rectangle2D
+-dontwarn java.awt.print.Printable
+-dontwarn javax.lang.model.SourceVersion
+-dontwarn javax.lang.model.element.Element
+-dontwarn javax.lang.model.element.Modifier
+-dontwarn javax.lang.model.type.TypeKind
+-dontwarn javax.lang.model.type.TypeMirror
+-dontwarn javax.lang.model.type.TypeVisitor
+-dontwarn javax.lang.model.util.SimpleAnnotationValueVisitor7
+-dontwarn javax.lang.model.util.SimpleTypeVisitor7
+-dontwarn javax.swing.Icon
+-dontwarn javax.swing.JButton
+-dontwarn javax.swing.JComponent
+-dontwarn javax.swing.JDialog
+-dontwarn javax.swing.JFileChooser
+-dontwarn javax.swing.JFrame
+-dontwarn javax.swing.JPanel
+-dontwarn javax.swing.JScrollPane
+-dontwarn javax.swing.JSlider
+-dontwarn javax.swing.JSplitPane
+-dontwarn javax.swing.JTree
+-dontwarn javax.swing.SwingUtilities
+-dontwarn javax.swing.UIManager
+-dontwarn javax.swing.event.CaretListener
+-dontwarn javax.swing.event.ChangeListener
+-dontwarn javax.swing.event.ListSelectionListener
+-dontwarn javax.swing.event.TreeSelectionListener
+-dontwarn javax.swing.filechooser.FileFilter
+-dontwarn javax.swing.tree.DefaultMutableTreeNode
+-dontwarn javax.swing.tree.MutableTreeNode
+-dontwarn javax.swing.tree.TreeModel
+-dontwarn javax.swing.tree.TreeNode
+-dontwarn javax.swing.tree.TreeSelectionModel
+-dontwarn javax.tools.Diagnostic$Kind
+-dontwarn javax.tools.SimpleJavaFileObject
+-dontwarn javax.xml.bind.JAXBContext
+-dontwarn javax.xml.bind.JAXBException
+-dontwarn javax.xml.bind.Marshaller
+-dontwarn javax.xml.bind.Unmarshaller
+-dontwarn javax.xml.bind.annotation.XmlAccessType
+-dontwarn javax.xml.bind.annotation.XmlAccessorType
+-dontwarn javax.xml.bind.annotation.XmlAttribute
+-dontwarn javax.xml.bind.annotation.XmlElement
+-dontwarn javax.xml.bind.annotation.XmlRootElement
+-dontwarn org.antlr.stringtemplate.StringTemplate
+
+############################################################
+# END
+############################################################

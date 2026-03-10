@@ -258,6 +258,7 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
     }
 
     private fun stopTimerAndSensors() {
+        speak("Teste finalizado")
         running.set(false)
         sensorCollectionActive.set(false)
         try {
@@ -302,11 +303,12 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
 
                 delay(200)
                 elapsedMs -= 200
-
+             
                 // Quando zerar → finaliza o teste automaticamente
                 if (elapsedMs <= 0) {
                     running.set(false)
                     timerJob?.cancel()
+
                     
                     // Manter sensores coletando por mais 2 segundos após o fim do timer
                     Handler(Looper.getMainLooper()).postDelayed({
@@ -326,9 +328,9 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
                         timeDisplay = "00:00"
                         
                         // Mostrar dialog com resultado de ciclos SLS
-                        showCycleResultDialog(slsPeakDetector.getCycleCount())
+
                     }
-                    speak("Teste concluído. ${slsPeakDetector.getCycleCount()} repetições.")
+
 
                     // fluxo ao terminar automaticamente
                     if (RoleHelpers.isHealthProfessional()) {
@@ -337,6 +339,7 @@ class Timer : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListe
                         paused = true
                         // ensure UI update happens on main thread
                         runOnUiThread {
+                            speak("Teste finalizado")
                             pauseButton.text = "Enviar"
                         }
 
